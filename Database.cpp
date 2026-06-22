@@ -7,8 +7,16 @@ Database::Database(int cap) : capacity(cap), currentSize(0) {
 }
 
 Database::~Database() {
+    // اول همه گره‌ها رو از LRU list پیاده‌سازی  میشه 
+    CacheNode* current = lruList->getHead();
+    while (current != nullptr) {
+        CacheNode* nextNode = current->next;
+        delete current;
+        current = nextNode;
+    }
+    // بعد هم ساختارها
     delete hashTable;
-    delete lruList; 
+    delete lruList;
     delete avlTree;
 }
 
