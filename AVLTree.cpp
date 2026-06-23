@@ -131,9 +131,9 @@ CacheNode* AVLTree::removeRecursive(CacheNode* node, const std::string& key) {
             CacheNode* temp = node->left ? node->left : node->right;
             
             // ما حافظه را delete نمی‌کنیم، فقط گره را از درخت کنار می‌گذاریم (Bypass)
-            node = temp; 
+            return temp; 
         } else {
-            // گره دارای دو فرزند است
+            // گره  دو فرزند داره
             // پیدا کردن جانشین (کوچکترین گره تو زیردرخت راست)
             CacheNode* temp = findMinNode(node->right);
 
@@ -145,7 +145,7 @@ CacheNode* AVLTree::removeRecursive(CacheNode* node, const std::string& key) {
             temp->left = node->left;
             temp->right = node->right;
             temp->height = 1 + std::max(height(temp->left), height(temp->right));
-            node = temp;
+            return rebalance(temp);
         }
     }
 

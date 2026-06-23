@@ -1,0 +1,27 @@
+3
+PUT apple 100
+PUT banana 200
+PUT cherry 300
+STATS
+GET apple
+STATS
+PUT date 400
+STATS
+GET banana
+PUT elderberry 500
+STATS
+DEL cherry
+STATS
+PUT fig 600
+RANGE a c
+RANGE banana elderberry
+RANGE z a
+PUT apple 999
+GET apple
+STATS
+DEL nonexistent
+GET nonexistent
+DEL banana
+STATS
+RANGE a z
+EXIT
