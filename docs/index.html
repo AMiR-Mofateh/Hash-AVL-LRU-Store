@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>یک گره، سه ساختار — In-Memory KV Store Visualizer</title>
+<title> In-Memory KV Store Visualizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -226,10 +226,9 @@
   <div class="masthead">
     <div class="masthead-text">
       <div class="eyebrow">In-Memory Key-Value Store</div>
-      <h1>یک گره، سه ساختار</h1>
+      <h1>One Node. Three Data Structures.</h1>
       <p class="lede">
-        دستور بده، ببین هم‌زمان توی <b>Hash Table</b>، <b>LRU List</b> و <b>AVL Tree</b> چه اتفاقی می‌افته —
-        همون منطقی که توی کد ‎C++‎ اجرا می‌شه، این‌جا زنده جلوی چشمته.
+        Interactively visualize how every operation propagates through the <b>Hash Table</b>, <b>LRU List</b>, and <b>AVL Tree</b>
       </p>
       <div class="badges">
         <span class="badge">Hash Table · <b>O(1)</b> avg</span>
@@ -239,19 +238,19 @@
     </div>
     <a class="gh-link" href="#" id="ghLink" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-      <span>see code in Github</span>
+      <span>View Source on GitHub</span>
     </a>
   </div>
 
   <div class="controls">
     <div class="control-group">
-      <label for="capacityInput">ظرفیت</label>
+      <label for="capacityInput">Capacity</label>
       <input type="number" id="capacityInput" min="1" value="5">
     </div>
-    <button class="btn-ghost" id="resetBtn">شروع دوباره</button>
-    <span class="cap-error" id="capError">ظرفیت باید عدد صحیح مثبت باشه.</span>
+    <button class="btn-ghost" id="resetBtn">Reset</button>
+    <span class="cap-error" id="capError">Capacity must be a positive integer.</span>
     <div class="spacer"></div>
-    <button class="btn-ghost" id="demoBtn">▸ اجرای نمونه</button>
+    <button class="btn-ghost" id="demoBtn">▸ Sample Execution</button>
   </div>
 
   <div class="console">
@@ -259,7 +258,7 @@
       <span class="prompt-glyph">›</span>
       <input type="text" id="cmdInput" placeholder="PUT apple 100" autocomplete="off" spellcheck="false">
       <div class="console-actions">
-        <button class="btn-run" id="runBtn">اجرا</button>
+        <button class="btn-run" id="runBtn">run</button>
       </div>
     </div>
     <div class="log" id="log" role="log" aria-live="polite"></div>
@@ -298,8 +297,7 @@
   </div>
 
   <footer>
-    <span>این صفحه پیاده‌سازی جاوااسکریپتیِ همون سه ساختار داده‌ی پروژه‌ست (برای نمایش زنده در ارائه)؛ منطق و پیچیدگی زمانی دقیقاً مطابق کد اصلی ‎C++‎ است.</span>
-    <span>پروژه‌ی درس ساختمان داده‌ها — دانشگاه صنعتی اصفهان</span>
+    <span> IUT </span>
   </footer>
 </div>
 
