@@ -1,9 +1,9 @@
 # ⚡ In-Memory Key-Value Store — Hash Table • LRU Cache • AVL Tree
 
-![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
-![Build](https://img.shields.io/badge/build-g%2B%2B-lightgrey.svg)
-![Structures](https://img.shields.io/badge/data%20structures-Hash%20Table%20%7C%20DLL%20%7C%20AVL%20Tree-orange.svg)
-![Status](https://img.shields.io/badge/status-university%20project-green.svg)
+<a![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
+<a![Build](https://img.shields.io/badge/build-g%2B%2B-lightgrey.svg)
+<a![Structures](https://img.shields.io/badge/data%20structures-Hash%20Table%20%7C%20DLL%20%7C%20AVL%20Tree-orange.svg)
+<a![Status](https://img.shields.io/badge/status-university%20project-green.svg)
 <p align="center">
 
 <a href="https://amir-mofateh.github.io/Hash-AVL-LRU-Store/">
