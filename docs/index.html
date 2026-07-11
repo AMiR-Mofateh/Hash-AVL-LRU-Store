@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>یک گره، سه ساختار — In-Memory KV Store Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6F8;
+    --surface:#FFFFFF;
+    --ink:#14202B;
+    --ink-soft:#46586B;
+    --muted:#8592A0;
+    --line:#DDE4EA;
+    --accent:#DA8A2E;
+    --accent-ink:#7A4A0F;
+    --accent-soft:#FBEAD2;
+    --teal:#2F6F6E;
+    --teal-soft:#E3F0EF;
+    --danger:#C5533F;
+    --danger-soft:#FBE7E2;
+    --console-bg:#141B22;
+    --console-line:#26313B;
+    --radius:12px;
+    --font-fa:'Vazirmatn',Tahoma,'Segoe UI',sans-serif;
+    --font-display:'Space Grotesk','Vazirmatn',Tahoma,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-fa);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft);color:var(--accent-ink);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px;}
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:24px;margin-bottom:26px;flex-wrap:wrap;
+  }
+  .masthead-text{max-width:640px;}
+  .eyebrow{
+    font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;
+    color:var(--teal);font-weight:500;text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;
+    direction:ltr;
+  }
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;}
+  h1{
+    font-family:var(--font-display);font-size:clamp(28px,4vw,38px);
+    font-weight:700;margin:0 0 10px;letter-spacing:-.01em;
+  }
+  .lede{color:var(--ink-soft);font-size:15.5px;margin:0;}
+  .lede b{color:var(--ink);font-weight:600;}
+
+  .badges{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .badge{
+    font-family:var(--font-mono);font-size:12px;direction:ltr;
+    border:1px solid var(--line);background:var(--surface);
+    border-radius:999px;padding:6px 12px;color:var(--ink-soft);
+    display:inline-flex;gap:6px;align-items:center;
+  }
+  .badge b{color:var(--ink);font-weight:600;}
+
+  .gh-link{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13.5px;color:var(--ink-soft);text-decoration:none;
+    border:1px solid var(--line);background:var(--surface);
+    padding:9px 14px;border-radius:999px;white-space:nowrap;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .gh-link:hover{border-color:var(--teal);color:var(--teal);}
+  .gh-link svg{width:16px;height:16px;flex:none;}
+
+  /* ---------- Control row ---------- */
+  .controls{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;
+  }
+  .control-group{display:flex;align-items:center;gap:8px;}
+  .control-group label{font-size:13px;color:var(--ink-soft);white-space:nowrap;}
+  input[type=number]{
+    width:64px;font-family:var(--font-mono);font-size:14px;
+    border:1px solid var(--line);border-radius:8px;padding:7px 8px;
+    background:var(--bg);color:var(--ink);direction:ltr;text-align:center;
+  }
+  input[type=number]:focus, input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  button{
+    font-family:var(--font-fa);font-size:13.5px;font-weight:600;
+    border:none;border-radius:8px;padding:9px 16px;cursor:pointer;
+    transition:transform .1s ease, box-shadow .15s ease;
+  }
+  button:active{transform:translateY(1px);}
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-primary:hover{box-shadow:0 4px 14px rgba(20,32,43,.25);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+  .spacer{flex:1;}
+  .cap-error{color:var(--danger);font-size:12.5px;display:none;}
+
+  /* ---------- Console ---------- */
+  .console{
+    background:var(--console-bg);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:20px;border:1px solid #0D1319;
+  }
+  .console-row{display:flex;align-items:center;gap:10px;}
+  .prompt-glyph{color:var(--accent);font-family:var(--font-mono);font-size:16px;direction:ltr;}
+  .console input[type=text]{
+    flex:1;background:transparent;border:none;outline:none;
+    color:#EAF0F5;font-family:var(--font-mono);font-size:14.5px;
+    direction:ltr;text-align:left;
+  }
+  .console input[type=text]::placeholder{color:#5C6B78;}
+  .console-actions{display:flex;gap:8px;}
+  .btn-run{background:var(--accent);color:#241300;}
+  .btn-run:hover{box-shadow:0 4px 14px rgba(218,138,46,.35);}
+  .btn-demo{background:transparent;color:#9FB0BD;border:1px solid var(--console-line);}
+  .btn-demo:hover{border-color:var(--teal);color:#CFE7E6;}
+
+  .log{
+    margin-top:12px;padding-top:12px;border-top:1px solid var(--console-line);
+    max-height:132px;overflow-y:auto;font-family:var(--font-mono);
+    font-size:13px;direction:ltr;text-align:left;
+  }
+  .log::-webkit-scrollbar{width:8px;}
+  .log::-webkit-scrollbar-thumb{background:var(--console-line);border-radius:4px;}
+  .log-line{padding:2px 0;color:#B8C4CE;white-space:pre-wrap;word-break:break-word;}
+  .log-line .cmd{color:#7FD1CE;}
+  .log-line .ok{color:#8FD19E;}
+  .log-line .err{color:#E39B8C;}
+  .log-line .val{color:#F0C77E;}
+
+  /* ---------- Panels ---------- */
+  .panels{
+    display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px;
+  }
+  @media (max-width:900px){ .panels{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;
+  }
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;}
+  .panel-title{font-family:var(--font-display);font-weight:700;font-size:15px;direction:ltr;}
+  .panel-note{font-family:var(--font-mono);font-size:11px;color:var(--muted);direction:ltr;}
+  .panel-body{flex:1;min-height:180px;}
+
+  /* Hash table buckets */
+  .buckets{display:flex;flex-direction:column;gap:6px;}
+  .bucket{display:flex;align-items:center;gap:8px;}
+  .bucket-idx{
+    font-family:var(--font-mono);font-size:11px;color:var(--muted);
+    width:18px;text-align:right;direction:ltr;flex:none;
+  }
+  .bucket-chain{
+    display:flex;gap:6px;flex-wrap:wrap;flex:1;min-height:26px;
+    align-items:center;border-bottom:1px dashed var(--line);padding-bottom:6px;
+  }
+  .chip{
+    font-family:var(--font-mono);font-size:12px;direction:ltr;
+    background:var(--teal-soft);color:var(--teal);border:1px solid #CFE3E2;
+    border-radius:7px;padding:3px 8px;white-space:nowrap;
+  }
+  .chip.on-accent{background:var(--accent-soft);color:var(--accent-ink);border-color:#F0D5A6;}
+  .chip.on-danger{background:var(--danger-soft);color:var(--danger);border-color:#F2C9C0;}
+
+  @keyframes popIn{
+    0%{transform:scale(.5);opacity:0;}
+    60%{transform:scale(1.08);opacity:1;}
+    100%{transform:scale(1);}
+  }
+  @keyframes pulseRing{
+    0%{box-shadow:0 0 0 0 rgba(218,138,46,.45);}
+    100%{box-shadow:0 0 0 8px rgba(218,138,46,0);}
+  }
+  .flash-new{animation:popIn .35s ease, pulseRing .9s ease;}
+  @keyframes shrinkOut{
+    0%{transform:scale(1);opacity:1;}
+    100%{transform:scale(.4);opacity:0;}
+  }
+  .flash-evict{animation:shrinkOut .45s ease forwards;animation-delay:.35s;}
+
+  /* LRU list */
+  .lru-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0;}
+  .lru-chip-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .lru-tag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted);direction:ltr;}
+  .lru-arrow{color:var(--line);font-size:15px;}
+  .lru-empty, .hash-empty, .avl-empty{color:var(--muted);font-size:13px;}
+
+  /* AVL tree */
+  .avl-svg-wrap{width:100%;overflow-x:auto;}
+  .avl-node-rect{fill:var(--surface);stroke:var(--teal);stroke-width:1.4;}
+  .avl-node-text{font-family:var(--font-mono);font-size:12px;fill:var(--ink);text-anchor:middle;}
+  .avl-node-height{font-family:var(--font-mono);font-size:8.5px;fill:var(--muted);text-anchor:middle;}
+  .avl-edge{stroke:var(--line);stroke-width:1.6;}
+  .avl-node-rect.flash-new{fill:var(--accent-soft);stroke:var(--accent);}
+  .avl-node-rect.flash-range{fill:var(--teal-soft);stroke:var(--teal);}
+
+  footer{
+    margin-top:28px;padding-top:18px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+  }
+  footer a{color:var(--teal);}
+
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+
+  @media (prefers-reduced-motion: reduce){
+    .flash-new, .flash-evict{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-text">
+      <div class="eyebrow">In-Memory Key-Value Store</div>
+      <h1>یک گره، سه ساختار</h1>
+      <p class="lede">
+        دستور بده، ببین هم‌زمان توی <b>Hash Table</b>، <b>LRU List</b> و <b>AVL Tree</b> چه اتفاقی می‌افته —
+        همون منطقی که توی کد ‎C++‎ اجرا می‌شه، این‌جا زنده جلوی چشمته.
+      </p>
+      <div class="badges">
+        <span class="badge">Hash Table · <b>O(1)</b> avg</span>
+        <span class="badge">LRU List · <b>O(1)</b></span>
+        <span class="badge">AVL Tree · <b>O(log n)</b></span>
+      </div>
+    </div>
+    <a class="gh-link" href="#" id="ghLink" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      <span>مشاهده کد در گیت‌هاب</span>
+    </a>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="capacityInput">ظرفیت</label>
+      <input type="number" id="capacityInput" min="1" value="5">
+    </div>
+    <button class="btn-ghost" id="resetBtn">شروع دوباره</button>
+    <span class="cap-error" id="capError">ظرفیت باید عدد صحیح مثبت باشه.</span>
+    <div class="spacer"></div>
+    <button class="btn-ghost" id="demoBtn">▸ اجرای نمونه</button>
+  </div>
+
+  <div class="console">
+    <div class="console-row">
+      <span class="prompt-glyph">›</span>
+      <input type="text" id="cmdInput" placeholder="PUT apple 100" autocomplete="off" spellcheck="false">
+      <div class="console-actions">
+        <button class="btn-run" id="runBtn">اجرا</button>
+      </div>
+    </div>
+    <div class="log" id="log" role="log" aria-live="polite"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Hash Table</span>
+        <span class="panel-note" id="hashCapNote"></span>
+      </div>
+      <div class="panel-body">
+        <div class="buckets" id="buckets"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">LRU List</span>
+        <span class="panel-note">HEAD → TAIL</span>
+      </div>
+      <div class="panel-body">
+        <div class="lru-row" id="lruRow"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">AVL Tree</span>
+        <span class="panel-note">range query O(log n + k)</span>
+      </div>
+      <div class="panel-body">
+        <div class="avl-svg-wrap" id="avlWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>این صفحه پیاده‌سازی جاوااسکریپتیِ همون سه ساختار داده‌ی پروژه‌ست (برای نمایش زنده در ارائه)؛ منطق و پیچیدگی زمانی دقیقاً مطابق کد اصلی ‎C++‎ است.</span>
+    <span>پروژه‌ی درس ساختمان داده‌ها — دانشگاه صنعتی اصفهان</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ======================= DATA STRUCTURES =======================
+  class Node{
+    constructor(key,value){
+      this.key=key; this.value=value;
+      this.prev=null; this.next=null;
+      this.left=null; this.right=null; this.height=1;
+    }
+  }
+
+  function djb2(key, capacity){
+    let hash = 5381;
+    for(let i=0;i<key.length;i++){
+      hash = (((hash<<5)+hash) + key.charCodeAt(i)) >>> 0;
+    }
+    return hash % capacity;
+  }
+
+  class HashTable{
+    constructor(capacity){
+      this.capacity=capacity;
+      this.buckets=Array.from({length:capacity},()=>[]);
+    }
+    idx(key){ return djb2(key,this.capacity); }
+    find(key){
+      const b=this.buckets[this.idx(key)];
+      for(const n of b) if(n.key===key) return n;
+      return null;
+    }
+    insert(node){ this.buckets[this.idx(node.key)].unshift(node); }
+    remove(node){
+      const b=this.buckets[this.idx(node.key)];
+      const i=b.indexOf(node);
+      if(i>=0) b.splice(i,1);
+    }
+  }
+
+  class LRUList{
+    constructor(){ this.head=null; this.tail=null; }
+    addToHead(node){
+      node.prev=null; node.next=this.head;
+      if(this.head) this.head.prev=node;
+      this.head=node;
+      if(!this.tail) this.tail=node;
+    }
+    removeNode(node){
+      if(node.prev) node.prev.next=node.next; else this.head=node.next;
+      if(node.next) node.next.prev=node.prev; else this.tail=node.prev;
+      node.prev=null; node.next=null;
+    }
+    moveToHead(node){
+      if(!node || node===this.head) return;
+      this.removeNode(node);
+      this.addToHead(node);
+    }
+    toArray(){
+      const out=[]; let c=this.head;
+      while(c){ out.push(c); c=c.next; }
+      return out;
+    }
+  }
+
+  class AVLTree{
+    constructor(){ this.root=null; this.touched=new Set(); this.rotations=[]; }
+    h(n){ return n?n.height:0; }
+    bf(n){ return n?this.h(n.left)-this.h(n.right):0; }
+    upd(n){ n.height=1+Math.max(this.h(n.left),this.h(n.right)); }
+    rightRotate(y){
+      const x=y.left, T2=x.right;
+      x.right=y; y.left=T2;
+      this.upd(y); this.upd(x);
+      this.touched.add(y.key); this.touched.add(x.key);
+      return x;
+    }
+    leftRotate(y){
+      const x=y.right, T2=x.left;
+      x.left=y; y.right=T2;
+      this.upd(y); this.upd(x);
+      this.touched.add(y.key); this.touched.add(x.key);
+      return x;
+    }
+    rebalance(node){
+      this.upd(node);
+      const b=this.bf(node);
+      if(b>1){
+        if(this.bf(node.left)<0){
+          node.left=this.leftRotate(node.left);
+          this.rotations.push('LR @ '+node.key);
+        } else this.rotations.push('LL @ '+node.key);
+        return this.rightRotate(node);
+      }
+      if(b<-1){
+        if(this.bf(node.right)>0){
+          node.right=this.rightRotate(node.right);
+          this.rotations.push('RL @ '+node.key);
+        } else this.rotations.push('RR @ '+node.key);
+        return this.leftRotate(node);
+      }
+      return node;
+    }
+    insert(newNode){
+      this.touched=new Set(); this.rotations=[];
+      this.root=this._insert(this.root,newNode);
+    }
+    _insert(node,nn){
+      if(!node) return nn;
+      if(nn.key<node.key) node.left=this._insert(node.left,nn);
+      else if(nn.key>node.key) node.right=this._insert(node.right,nn);
+      else return node;
+      return this.rebalance(node);
+    }
+    findMin(node){ while(node.left) node=node.left; return node; }
+    remove(key){
+      this.touched=new Set(); this.rotations=[];
+      this.root=this._remove(this.root,key);
+    }
+    _remove(node,key){
+      if(!node) return null;
+      if(key<node.key) node.left=this._remove(node.left,key);
+      else if(key>node.key) node.right=this._remove(node.right,key);
+      else{
+        if(!node.left || !node.right){
+          return node.left || node.right;
+        } else {
+          const succ=this.findMin(node.right);
+          node.right=this._remove(node.right,succ.key);
+          succ.left=node.left; succ.right=node.right;
+          this.upd(succ);
+          return this.rebalance(succ);
+        }
+      }
+      return this.rebalance(node);
+    }
+    rangeQuery(k1,k2){
+      let lo=k1,hi=k2; if(lo>hi){ const t=lo; lo=hi; hi=t; }
+      const out=[];
+      const rec=(node)=>{
+        if(!node) return;
+        if(node.key>lo) rec(node.left);
+        if(node.key>=lo && node.key<=hi) out.push(node);
+        if(node.key<hi) rec(node.right);
+      };
+      rec(this.root);
+      return out;
+    }
+  }
+
+  class Database{
+    constructor(capacity){
+      this.capacity=capacity; this.size=0;
+      this.hash=new HashTable(capacity);
+      this.lru=new LRUList();
+      this.avl=new AVLTree();
+    }
+    put(key,value){
+      const existing=this.hash.find(key);
+      if(existing){
+        existing.value=value;
+        this.lru.moveToHead(existing);
+        return {type:'updated'};
+      }
+      let evicted=null;
+      if(this.size===this.capacity){
+        const t=this.lru.tail;
+        evicted=t.key;
+        this.avl.remove(t.key);
+        this.hash.remove(t);
+        this.lru.removeNode(t);
+        this.size--;
+      }
+      const node=new Node(key,value);
+      this.hash.insert(node);
+      this.avl.insert(node);
+      this.lru.addToHead(node);
+      this.size++;
+      return {type:'inserted', evicted};
+    }
+    get(key){
+      const node=this.hash.find(key);
+      if(!node) return {type:'notfound'};
+      this.lru.moveToHead(node);
+      return {type:'value', value:node.value};
+    }
+    del(key){
+      const node=this.hash.find(key);
+      if(!node) return {type:'notfound'};
+      this.avl.remove(key);
+      this.hash.remove(node);
+      this.lru.removeNode(node);
+      this.size--;
+      return {type:'deleted'};
+    }
+    range(k1,k2){ return this.avl.rangeQuery(k1,k2); }
+    stats(){
+      return {count:this.size, capacity:this.capacity,
+        head:this.lru.head?this.lru.head.key:null,
+        tail:this.lru.tail?this.lru.tail.key:null};
+    }
+  }
+
+  // ======================= APP STATE =======================
+  let db = null;
+  let lastTouchedKey = null;
+  let lastEvictedKey = null;
+  let lastRangeKeys = new Set();
+
+  const $ = (id)=>document.getElementById(id);
+  const el = {
+    capacityInput: $('capacityInput'),
+    resetBtn: $('resetBtn'),
+    capError: $('capError'),
+    demoBtn: $('demoBtn'),
+    cmdInput: $('cmdInput'),
+    runBtn: $('runBtn'),
+    log: $('log'),
+    buckets: $('buckets'),
+    hashCapNote: $('hashCapNote'),
+    lruRow: $('lruRow'),
+    avlWrap: $('avlWrap'),
+    ghLink: $('ghLink'),
+  };
+
+  function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+  function logLine(html){
+    const div=document.createElement('div');
+    div.className='log-line';
+    div.innerHTML=html;
+    el.log.appendChild(div);
+    el.log.scrollTop=el.log.scrollHeight;
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+
+  // ---------- Rendering ----------
+  function renderAll(){
+    renderHash();
+    renderLRU();
+    renderAVL();
+  }
+
+  function renderHash(){
+    el.hashCapNote.textContent = db.capacity + ' bucket' + (db.capacity===1?'':'s');
+    el.buckets.innerHTML='';
+    for(let i=0;i<db.capacity;i++){
+      const row=document.createElement('div');
+      row.className='bucket';
+      const idx=document.createElement('span');
+      idx.className='bucket-idx'; idx.textContent=i;
+      const chain=document.createElement('div');
+      chain.className='bucket-chain';
+      const nodes=db.hash.buckets[i];
+      if(nodes.length===0){
+        // keep empty but visible via the dashed line
+      }
+      nodes.forEach(n=>{
+        const chip=document.createElement('span');
+        let cls='chip';
+        if(n.key===lastEvictedKey) cls+=' on-danger flash-evict';
+        else if(n.key===lastTouchedKey) cls+=' on-accent flash-new';
+        chip.className=cls;
+        chip.textContent=n.key;
+        chip.title=n.key+' : '+n.value;
+        chain.appendChild(chip);
+      });
+      row.appendChild(idx); row.appendChild(chain);
+      el.buckets.appendChild(row);
+    }
+  }
+
+  function renderLRU(){
+    const arr=db.lru.toArray();
+    el.lruRow.innerHTML='';
+    if(arr.length===0){
+      const e=document.createElement('span');
+      e.className='lru-empty'; e.textContent='(خالی)';
+      el.lruRow.appendChild(e);
+      return;
+    }
+    arr.forEach((n,i)=>{
+      if(i>0){
+        const arrow=document.createElement('span');
+        arrow.className='lru-arrow'; arrow.textContent='↔';
+        el.lruRow.appendChild(arrow);
+      }
+      const wrap=document.createElement('div');
+      wrap.className='lru-chip-wrap';
+      const tag=document.createElement('span');
+      tag.className='lru-tag';
+      tag.textContent = i===0 ? 'HEAD · MRU' : (i===arr.length-1 ? 'TAIL · next evict' : '\u00A0');
+      const chip=document.createElement('span');
+      let cls='chip';
+      if(n.key===lastEvictedKey) cls+=' on-danger flash-evict';
+      else if(n.key===lastTouchedKey) cls+=' on-accent flash-new';
+      chip.className=cls;
+      chip.textContent=n.key;
+      chip.title=n.key+' : '+n.value;
+      wrap.appendChild(tag); wrap.appendChild(chip);
+      el.lruRow.appendChild(wrap);
+    });
+  }
+
+  function renderAVL(){
+    const NODE_W=56, NODE_H=30, X_GAP=18, Y_GAP=52, PAD=24;
+    let i=0;
+    const positions=new Map();
+    let maxDepth=0;
+
+    function assign(node, depth){
+      if(!node) return;
+      assign(node.left, depth+1);
+      positions.set(node, {x: i*(NODE_W+X_GAP), y: depth*Y_GAP, node});
+      i++;
+      maxDepth=Math.max(maxDepth, depth);
+      assign(node.right, depth+1);
+    }
+    assign(db.avl.root, 0);
+
+    const count = positions.size;
+    el.avlWrap.innerHTML='';
+    if(count===0){
+      const e=document.createElement('div');
+      e.className='avl-empty'; e.textContent='(درخت خالیه)';
+      el.avlWrap.appendChild(e);
+      return;
+    }
+    const width = Math.max(count*(NODE_W+X_GAP) - X_GAP, 120) + PAD*2;
+    const height = (maxDepth+1)*Y_GAP + PAD*2;
+
+    const svgns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgns,'svg');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', Math.min(width, 640));
+    svg.setAttribute('height', height);
+
+    // edges first (so nodes render on top)
+    positions.forEach(({x,y,node})=>{
+      const cx = x+NODE_W/2+PAD, cy=y+NODE_H/2+PAD;
+      [node.left, node.right].forEach(child=>{
+        if(child && positions.has(child)){
+          const cp=positions.get(child);
+          const ccx=cp.x+NODE_W/2+PAD, ccy=cp.y+NODE_H/2+PAD;
+          const line=document.createElementNS(svgns,'line');
+          line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+          line.setAttribute('x2',ccx); line.setAttribute('y2',ccy);
+          line.setAttribute('class','avl-edge');
+          svg.appendChild(line);
+        }
+      });
+    });
+
+    positions.forEach(({x,y,node})=>{
+      const gx=x+PAD, gy=y+PAD;
+      const rect=document.createElementNS(svgns,'rect');
+      rect.setAttribute('x',gx); rect.setAttribute('y',gy);
+      rect.setAttribute('width',NODE_W); rect.setAttribute('height',NODE_H);
+      rect.setAttribute('rx',7);
+      let rectClass='avl-node-rect';
+      if(node.key===lastEvictedKey) rectClass+=' flash-evict';
+      else if(node.key===lastTouchedKey) rectClass+=' flash-new';
+      else if(lastRangeKeys.has(node.key)) rectClass+=' flash-range';
+      rect.setAttribute('class',rectClass);
+      svg.appendChild(rect);
+
+      const text=document.createElementNS(svgns,'text');
+      text.setAttribute('x',gx+NODE_W/2); text.setAttribute('y',gy+NODE_H/2+4);
+      text.setAttribute('class','avl-node-text');
+      text.textContent=node.key;
+      svg.appendChild(text);
+
+      const hlabel=document.createElementNS(svgns,'text');
+      hlabel.setAttribute('x',gx+NODE_W-8); hlabel.setAttribute('y',gy+10);
+      hlabel.setAttribute('class','avl-node-height');
+      hlabel.textContent='h'+node.height;
+      svg.appendChild(hlabel);
+    });
+
+    el.avlWrap.appendChild(svg);
+  }
+
+  // ---------- Command execution ----------
+  async function runCommand(raw){
+    const trimmed=raw.trim();
+    if(!trimmed) return;
+    logLine(`<span class="cmd">› ${esc(trimmed)}</span>`);
+    const parts=trimmed.split(/\s+/);
+    const cmd=parts[0].toUpperCase();
+    lastTouchedKey=null; lastEvictedKey=null; lastRangeKeys=new Set();
+
+    if(cmd==='PUT'){
+      const key=parts[1], value=parts.slice(2).join(' ');
+      if(key===undefined || value===''){
+        logLine(`<span class="err">فرمت درست: PUT key value</span>`); return;
+      }
+      const existing=db.hash.find(key);
+      if(!existing && db.size===db.capacity && db.lru.tail){
+        // preview eviction
+        lastEvictedKey=db.lru.tail.key;
+        renderAll();
+        await sleep(500);
+      }
+      const res=db.put(key,value);
+      lastTouchedKey=key;
+      lastEvictedKey=res.evicted || null;
+      renderAll();
+      logLine(`<span class="ok">OK: ${res.type==='updated'?'Updated':'Inserted'}</span>`);
+      await sleep(650);
+      lastEvictedKey=null;
+      renderAll();
+    }
+    else if(cmd==='GET'){
+      const key=parts[1];
+      const res=db.get(key);
+      if(res.type==='notfound'){ logLine(`<span class="err">NOT FOUND</span>`); return; }
+      lastTouchedKey=key;
+      renderAll();
+      logLine(`<span class="val">VALUE: ${esc(res.value)}</span>`);
+    }
+    else if(cmd==='DEL'){
+      const key=parts[1];
+      const existing=db.hash.find(key);
+      if(!existing){ logLine(`<span class="err">NOT FOUND</span>`); return; }
+      lastEvictedKey=key;
+      renderAll();
+      await sleep(420);
+      db.del(key);
+      lastEvictedKey=null;
+      renderAll();
+      logLine(`<span class="ok">OK: Deleted</span>`);
+    }
+    else if(cmd==='RANGE'){
+      const k1=parts[1], k2=parts[2];
+      if(k1===undefined || k2===undefined){
+        logLine(`<span class="err">فرمت درست: RANGE key1 key2</span>`); return;
+      }
+      const nodes=db.range(k1,k2);
+      lastRangeKeys=new Set(nodes.map(n=>n.key));
+      renderAll();
+      if(nodes.length===0){ logLine(`<span class="err">EMPTY RANGE</span>`); }
+      else{
+        const line=nodes.map(n=>`${n.key}:${n.value}`).join(' ');
+        logLine(`<span class="val">${esc(line)}</span>`);
+      }
+      await sleep(1400);
+      lastRangeKeys=new Set();
+      renderAll();
+    }
+    else if(cmd==='STATS'){
+      const s=db.stats();
+      logLine(`Count: ${s.count}/${s.capacity}`);
+      logLine(`LRU Head: ${s.head ?? 'NULL'}`);
+      logLine(`LRU Tail: ${s.tail ?? 'NULL'}`);
+    }
+    else{
+      logLine(`<span class="err">UNKNOWN COMMAND</span>`);
+    }
+  }
+
+  // ---------- Wiring ----------
+  function resetDb(){
+    const cap=parseInt(el.capacityInput.value,10);
+    if(!Number.isInteger(cap) || cap<=0){
+      el.capError.style.display='inline';
+      return;
+    }
+    el.capError.style.display='none';
+    db=new Database(cap);
+    lastTouchedKey=null; lastEvictedKey=null; lastRangeKeys=new Set();
+    el.log.innerHTML='';
+    logLine(`<span class="ok">Database initialized. Capacity = ${cap}</span>`);
+    renderAll();
+  }
+
+  el.resetBtn.addEventListener('click', resetDb);
+  el.capacityInput.addEventListener('keydown', e=>{ if(e.key==='Enter') resetDb(); });
+
+  el.runBtn.addEventListener('click', ()=>{
+    const v=el.cmdInput.value;
+    el.cmdInput.value='';
+    runCommand(v);
+  });
+  el.cmdInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      const v=el.cmdInput.value;
+      el.cmdInput.value='';
+      runCommand(v);
+    }
+  });
+
+  const DEMO_SCRIPT=[
+    'PUT apple 100','PUT banana 200','PUT cherry 300',
+    'GET apple','PUT date 400','PUT elderberry 500',
+    'RANGE cherry elderberry','DEL banana','STATS'
+  ];
+  el.demoBtn.addEventListener('click', async ()=>{
+    el.demoBtn.disabled=true;
+    resetDb();
+    await sleep(400);
+    for(const line of DEMO_SCRIPT){
+      await runCommand(line);
+      await sleep(500);
+    }
+    el.demoBtn.disabled=false;
+  });
+
+  // GitHub link: best-effort guess, safe fallback to a search if unknown.
+  el.ghLink.href = 'https://github.com/AMiR-Mofateh/Hash-AVL-LRU-Store';
+
+  // init
+  resetDb();
+})();
+</script>
+</body>
+</html>
