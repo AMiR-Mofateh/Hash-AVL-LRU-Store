@@ -4,7 +4,21 @@
 ![Build](https://img.shields.io/badge/build-g%2B%2B-lightgrey.svg)
 ![Structures](https://img.shields.io/badge/data%20structures-Hash%20Table%20%7C%20DLL%20%7C%20AVL%20Tree-orange.svg)
 ![Status](https://img.shields.io/badge/status-university%20project-green.svg)
+<p align="center">
 
+<a href="https://amir-mofateh.github.io/Hash-AVL-LRU-Store/">
+<img src="https://img.shields.io/badge/🚀_Launch-Live_Demo-success?style=for-the-badge"/>
+</a>
+
+<a href="https://github.com/AMiR-Mofateh/Hash-AVL-LRU-Store">
+<img src="https://img.shields.io/badge/⭐_Star_this_Repository-GitHub-black?style=for-the-badge&logo=github"/>
+</a>
+
+</p>
+
+<p align="center">
+<b>🎮 Try the interactive visualization directly in your browser — no installation required.</b>
+</p>
 A high-performance, **from-scratch** in-memory key-value store in C++, built for the Data Structures course at Isfahan University of Technology. It combines a custom hash table, a doubly linked list, and a self-balancing AVL tree around a single shared node type, giving O(1)-average lookups, O(1) LRU eviction, and O(log n + k) sorted range queries — with zero STL containers.
 
 ## Table of Contents
